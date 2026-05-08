@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { ProductVariant } from "@/lib/supabase";
 
 export type ProductStatus = "disponivel" | "vendido" | "reservado";
 
@@ -368,4 +369,121 @@ export function statusColor(s: ProductStatus): string {
     vendido: "bg-muted text-muted-foreground",
     reservado: "bg-amber-500 text-white",
   }[s];
+}
+
+// ===== Product Variants (Variações de Produtos) =====
+
+export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
+  try {
+    const { data, error } = await supabase
+      .from("product_variants")
+      .select("*")
+      .eq("product_id", productId)
+      .order("order_index", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching variants:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Exception fetching variants:", err);
+    return [];
+  }
+}
+
+export async function addProductVariant(
+  productId: string,
+  variant: Omit<ProductVariant, "id" | "product_id" | "created_at" | "updated_at">
+): Promise<ProductVariant | null> {
+  try {
+    const { data, error } = await supabase
+      .from("product_variants")
+      .insert([
+        {
+          product_id: productId,
+          sku: variant.sku,
+          color: variant.color || null,
+          storage: variant.storage || null,
+          ram: variant.ram || null,
+          condition: variant.condition,
+          specific_defects: variant.specific_defects || null,
+          price: variant.price,
+          original_price: variant.original_price || null,
+          stock_quantity: variant.stock_quantity,
+          status: variant.status,
+          order_index: variant.order_index,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating variant:", error);
+      return null;
+    }
+
+    return data || null;
+  } catch (err) {
+    console.error("Exception creating variant:", err);
+    return null;
+  }
+}
+
+export async function updateProductVariant(
+  variantId: string,
+  data: Partial<ProductVariant>
+): Promise<ProductVariant | undefined> {
+  try {
+    const updateData: any = {};
+
+    if (data.sku !== undefined) updateData.sku = data.sku;
+    if (data.color !== undefined) updateData.color = data.color;
+    if (data.storage !== undefined) updateData.storage = data.storage;
+    if (data.ram !== undefined) updateData.ram = data.ram;
+    if (data.condition !== undefined) updateData.condition = data.condition;
+    if (data.specific_defects !== undefined) updateData.specific_defects = data.specific_defects;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.original_price !== undefined) updateData.original_price = data.original_price;
+    if (data.stock_quantity !== undefined) updateData.stock_quantity = data.stock_quantity;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.order_index !== undefined) updateData.order_index = data.order_index;
+
+    const { data: updated, error } = await supabase
+      .from("product_variants")
+      .update(updateData)
+      .eq("id", variantId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating variant:", error);
+      return undefined;
+    }
+
+    return updated || undefined;
+  } catch (err) {
+    console.error("Exception updating variant:", err);
+    return undefined;
+  }
+}
+
+export async function deleteProductVariant(variantId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("product_variants")
+      .delete()
+      .eq("id", variantId);
+
+    if (error) {
+      console.error("Error deleting variant:", error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Exception deleting variant:", err);
+    return false;
+  }
 }

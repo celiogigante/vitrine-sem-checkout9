@@ -14,6 +14,7 @@ import AdminMenuManager from "@/components/AdminMenuManager";
 import AdminHeroConfig from "@/components/AdminHeroConfig";
 import AdminProductHighlights from "@/components/AdminProductHighlights";
 import AdminBrandsManager from "@/components/AdminBrandsManager";
+import AdminVariantManager from "@/components/AdminVariantManager";
 import { Pencil, Trash2, Plus, LogOut, Loader2, BarChart3, Package, Menu, Image, Star, Tag, Database, Power } from "lucide-react";
 import MigrationHelper from "@/components/MigrationHelper";
 import { useToast } from "@/hooks/use-toast";
@@ -531,6 +532,13 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               </div>
+
+              {/* Variações de Produtos */}
+              {editing && (
+                <div className="pt-4 border-t">
+                  <AdminVariantManager productId={editing} />
+                </div>
+              )}
 
               {/* Flags */}
               <div className="space-y-2">

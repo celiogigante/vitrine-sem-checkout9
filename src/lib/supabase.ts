@@ -85,3 +85,21 @@ export interface Order {
   created_at: string;
   updated_at: string;
 }
+
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  sku: string;
+  color?: string;
+  storage?: string;
+  ram?: string;
+  condition: "novo" | "seminovo" | "excelente" | "bom" | "regular";
+  specific_defects?: string;
+  price: number;
+  original_price?: number;
+  stock_quantity: number;
+  status: "disponivel" | "vendido" | "reservado";
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
