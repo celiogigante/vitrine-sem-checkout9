@@ -20,6 +20,8 @@ const Products = () => {
   const [condition, setCondition] = useState("all");
   const [sort, setSort] = useState("recent");
   const [mobileColumns, setMobileColumns] = useState<1 | 2>(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
     loadProducts();
@@ -64,6 +66,10 @@ const Products = () => {
 
     return list;
   }, [products, search, brand, condition, sort]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedList = filtered.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -138,11 +144,51 @@ const Products = () => {
       ) : (
         <div>
           <p className="text-sm text-muted-foreground mb-4">
-            {filtered.length} produto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}
+            {filtered.length} produto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} - Página {currentPage} de {totalPages}
           </p>
           <div className={`grid ${mobileColumns === 1 ? "grid-cols-1" : "grid-cols-2"} md:grid-cols-3 lg:grid-cols-4 gap-4`}>
-            {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+            {paginatedList.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+              >
+                ← Anterior
+              </button>
+              <div className="flex gap-1 flex-wrap justify-center">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      setCurrentPage(page);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      currentPage === page
+                        ? "bg-yellow-400 text-black font-medium"
+                        : "bg-gray-800 text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  setCurrentPage(Math.min(totalPages, currentPage + 1));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+              >
+                Próxima →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

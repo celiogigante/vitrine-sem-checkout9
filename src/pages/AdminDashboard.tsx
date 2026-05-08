@@ -15,6 +15,7 @@ import AdminHeroConfig from "@/components/AdminHeroConfig";
 import AdminProductHighlights from "@/components/AdminProductHighlights";
 import AdminBrandsManager from "@/components/AdminBrandsManager";
 import AdminVariantManager from "@/components/AdminVariantManager";
+import ModelSelector from "@/components/ModelSelector";
 import { Pencil, Trash2, Plus, LogOut, Loader2, BarChart3, Package, Menu, Image, Star, Tag, Database, Power } from "lucide-react";
 import MigrationHelper from "@/components/MigrationHelper";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,7 @@ export default function AdminDashboard() {
   const [form, setForm] = useState({
     name: "",
     brand: "Apple",
+    model_id: "",
     price: 0,
     original_price: undefined as number | undefined,
     description: "",
@@ -149,6 +151,7 @@ export default function AdminDashboard() {
     setForm({
       name: product.name,
       brand: product.brand,
+      model_id: product.modelId || "",
       price: product.price,
       original_price: product.originalPrice || undefined,
       description: product.description,
@@ -215,6 +218,7 @@ export default function AdminDashboard() {
     setForm({
       name: "",
       brand: "Apple",
+      model_id: "",
       price: 0,
       original_price: undefined,
       description: "",
@@ -426,6 +430,16 @@ export default function AdminDashboard() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Modelo
+                  </label>
+                  <ModelSelector
+                    value={form.model_id}
+                    onSelect={(modelId) => setForm({ ...form, model_id: modelId })}
+                    brand={form.brand}
+                  />
                 </div>
               </div>
 

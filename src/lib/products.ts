@@ -7,6 +7,7 @@ export interface Product {
   id: string;
   name: string;
   brand: string;
+  modelId?: string;
   price: number;
   originalPrice?: number;
   description: string;
@@ -33,6 +34,7 @@ function fromSupabaseProduct(data: any): Product {
     id: data.id,
     name: data.name,
     brand: data.brand,
+    modelId: data.model_id,
     price: data.price,
     originalPrice: data.original_price,
     description: data.description,
@@ -60,6 +62,7 @@ function toSupabaseProduct(product: Product) {
     id: product.id,
     name: product.name,
     brand: product.brand,
+    model_id: product.modelId,
     price: product.price,
     original_price: product.originalPrice,
     description: product.description,

@@ -67,6 +67,8 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mobileColumns, setMobileColumns] = useState<1 | 2>(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
     const h = () => setS(getSettings());
@@ -191,7 +193,10 @@ const Home = () => {
   );
 
   const featured = filtered.filter((p) => p.featured).slice(0, 4);
-  const list = filtered.slice(0, 8);
+  const vitrine = filtered.filter((p) => !p.featured);
+  const totalPages = Math.ceil(vitrine.length / ITEMS_PER_PAGE);
+  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+  const list = vitrine.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
   return (
     <div>
@@ -318,11 +323,47 @@ const Home = () => {
             <Loader2 className="animate-spin" />
           </div>
         ) : (
-          <div className={`grid ${mobileColumns === 1 ? "grid-cols-1" : "grid-cols-2"} md:grid-cols-4 gap-4`} style={{ gridAutoRows: "1fr" }}>
-            {list.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          <>
+            <div className={`grid ${mobileColumns === 1 ? "grid-cols-1" : "grid-cols-2"} md:grid-cols-4 gap-4`} style={{ gridAutoRows: "1fr" }}>
+              {list.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+                >
+                  ← Anterior
+                </button>
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-2 rounded-md transition-colors ${
+                        currentPage === page
+                          ? "bg-yellow-400 text-black font-medium"
+                          : "bg-gray-800 text-white hover:bg-gray-700"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+                >
+                  Próxima →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
