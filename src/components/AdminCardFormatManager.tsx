@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSettings, saveSettings, CardFormat } from "@/lib/products";
+import { getSettings, saveSettings, CardFormat, getProducts, type Product } from "@/lib/products";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -23,34 +23,30 @@ const CARD_FORMATS: { id: CardFormat; name: string; description: string }[] = [
   },
 ];
 
-const SAMPLE_PRODUCT = {
-  id: "sample",
-  name: "iPhone 13 128GB",
-  brand: "Apple",
-  price: 2022.15,
-  originalPrice: 2500,
-  description: "iPhone 13 com tela OLED, 5G e câmera dupla",
-  condition: "seminovo" as const,
-  status: "disponivel" as const,
-  images: [
-    "https://images.unsplash.com/photo-1592286927505-bc4cb12c4cda?w=300&h=400&fit=crop",
-  ],
-  specs: {},
-  featured: false,
-  promotion: true,
-  views: 234,
-  createdAt: new Date().toISOString().split("T")[0],
-};
-
 export default function AdminCardFormatManager() {
   const [selectedFormat, setSelectedFormat] = useState<CardFormat>("compact");
   const [isLoading, setIsLoading] = useState(true);
+  const [sampleProduct, setSampleProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const settings = getSettings();
-    setSelectedFormat(settings.cardFormat);
-    setIsLoading(false);
+    const loadData = async () => {
+      try {
+        const settings = getSettings();
+        setSelectedFormat(settings.cardFormat);
+
+        const products = await getProducts();
+        if (products.length > 0) {
+          setSampleProduct(products[0]);
+        }
+      } catch (err) {
+        console.error("Error loading data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const handleSaveFormat = (format: CardFormat) => {
@@ -86,43 +82,51 @@ export default function AdminCardFormatManager() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {CARD_FORMATS.map((format) => (
-          <div key={format.id}>
-            <Card
-              className={`p-4 mb-4 cursor-pointer transition-all ${
-                selectedFormat === format.id
-                  ? "border-blue-600 border-2 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-400"
-              }`}
-            >
-              <h3 className="font-bold text-lg mb-2">{format.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {format.description}
-              </p>
+      {sampleProduct ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {CARD_FORMATS.map((format) => (
+            <div key={format.id}>
+              <Card
+                className={`p-4 mb-4 cursor-pointer transition-all ${
+                  selectedFormat === format.id
+                    ? "border-blue-600 border-2 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-400"
+                }`}
+              >
+                <h3 className="font-bold text-lg mb-2">{format.name}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {format.description}
+                </p>
 
-              {selectedFormat === format.id && (
-                <div className="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
-                  Ativo
-                </div>
-              )}
-            </Card>
+                {selectedFormat === format.id && (
+                  <div className="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
+                    Ativo
+                  </div>
+                )}
+              </Card>
 
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
-              <ProductCard product={SAMPLE_PRODUCT} />
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
+                <ProductCard product={sampleProduct} />
+              </div>
+
+              <Button
+                onClick={() => handleSaveFormat(format.id)}
+                variant={selectedFormat === format.id ? "default" : "outline"}
+                className="w-full"
+                disabled={selectedFormat === format.id}
+              >
+                {selectedFormat === format.id ? "Ativo" : "Selecionar"}
+              </Button>
             </div>
-
-            <Button
-              onClick={() => handleSaveFormat(format.id)}
-              variant={selectedFormat === format.id ? "default" : "outline"}
-              className="w-full"
-              disabled={selectedFormat === format.id}
-            >
-              {selectedFormat === format.id ? "Ativo" : "Selecionar"}
-            </Button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium">
+            Nenhum produto encontrado. Adicione produtos para visualizar o preview dos formatos.
+          </p>
+        </div>
+      )}
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="font-semibold text-blue-900 mb-2">ℹ️ Informação</h4>
