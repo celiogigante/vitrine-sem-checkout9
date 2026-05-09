@@ -678,7 +678,7 @@ export async function incrementModelViews(modelId: string): Promise<void> {
 
 export async function recordWhatsAppClick(productId?: string, modelId?: string): Promise<void> {
   try {
-    await supabase
+    const { error } = await supabase
       .from("whatsapp_clicks")
       .insert([
         {
@@ -688,6 +688,10 @@ export async function recordWhatsAppClick(productId?: string, modelId?: string):
           referrer: document.referrer,
         },
       ]);
+
+    if (error) {
+      console.error("Error recording WhatsApp click:", error.message, error.details);
+    }
   } catch (err) {
     console.error("Error recording WhatsApp click:", err);
   }
@@ -727,5 +731,105 @@ export async function getWhatsAppClicksByModel(modelId: string): Promise<number>
   } catch (err) {
     console.error("Exception getting WhatsApp clicks by model:", err);
     return 0;
+  }
+}
+
+export async function getModelViewsAndWhatsAppClicks(): Promise<Array<{ modelId: string; modelName: string; views: number; whatsappClicks: number; conversionRate: number }>> {
+  try {
+    // Get all models with their views
+    const { data: models, error: modelsError } = await supabase
+      .from("models")
+      .select("id, name, views");
+
+    if (modelsError) {
+      console.error("Error fetching models:", modelsError);
+      return [];
+    }
+
+    // Get all WhatsApp clicks grouped by model_id
+    const { data: clicks, error: clicksError } = await supabase
+      .from("whatsapp_clicks")
+      .select("model_id");
+
+    if (clicksError) {
+      console.error("Error fetching WhatsApp clicks:", clicksError);
+      return [];
+    }
+
+    // Group clicks by model_id
+    const clicksByModel = new Map<string, number>();
+    (clicks || []).forEach((click: any) => {
+      if (click.model_id) {
+        clicksByModel.set(click.model_id, (clicksByModel.get(click.model_id) || 0) + 1);
+      }
+    });
+
+    // Build result array with views and clicks
+    return (models || [])
+      .map((model: any) => {
+        const whatsappClicks = clicksByModel.get(model.id) || 0;
+        const views = model.views || 0;
+        const conversionRate = views > 0 ? (whatsappClicks / views) * 100 : 0;
+
+        return {
+          modelId: model.id,
+          modelName: model.name,
+          views,
+          whatsappClicks,
+          conversionRate: Math.round(conversionRate * 10) / 10, // Round to 1 decimal
+        };
+      })
+      .sort((a, b) => b.whatsappClicks - a.whatsappClicks); // Sort by clicks descending
+  } catch (err) {
+    console.error("Exception getting model views and WhatsApp clicks:", err);
+    return [];
+  }
+}
+
+export async function getWhatsAppClicksRankingByModel(): Promise<Array<{ modelId: string; modelName: string; totalClicks: number }>> {
+  try {
+    // Get all clicks grouped by model_id
+    const { data, error } = await supabase
+      .from("whatsapp_clicks")
+      .select("model_id", { count: "exact" });
+
+    if (error) {
+      console.error("Error fetching WhatsApp clicks by model:", error);
+      return [];
+    }
+
+    // Group by model_id and count
+    const clicksByModel = new Map<string, number>();
+    (data || []).forEach((click: any) => {
+      if (click.model_id) {
+        clicksByModel.set(click.model_id, (clicksByModel.get(click.model_id) || 0) + 1);
+      }
+    });
+
+    // Get model names
+    const { data: models, error: modelsError } = await supabase
+      .from("models")
+      .select("id, name");
+
+    if (modelsError) {
+      console.error("Error fetching models:", modelsError);
+    }
+
+    const modelMap = new Map<string, string>();
+    (models || []).forEach((model: any) => {
+      modelMap.set(model.id, model.name);
+    });
+
+    // Build result array sorted by clicks
+    return Array.from(clicksByModel.entries())
+      .map(([modelId, clicks]) => ({
+        modelId,
+        modelName: modelMap.get(modelId) || "Modelo desconhecido",
+        totalClicks: clicks,
+      }))
+      .sort((a, b) => b.totalClicks - a.totalClicks);
+  } catch (err) {
+    console.error("Exception getting WhatsApp clicks by model:", err);
+    return [];
   }
 }

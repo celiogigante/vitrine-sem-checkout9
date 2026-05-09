@@ -26,6 +26,7 @@ const ProductDetail = () => {
 
   const handleWhatsAppClick = () => {
     if (product) {
+      console.log("WhatsApp click:", { productId: product.id, modelId: product.modelId });
       recordProductClick(product.id, { type: "whatsapp" });
       recordWhatsAppClick(product.id, product.modelId);
     }
@@ -213,19 +214,14 @@ const ProductDetail = () => {
             </p>
           </div>
 
-          {!sold && selectedVariant?.stock_quantity > 0 ? (
+          {!sold && (variants.length === 0 || selectedVariant?.stock_quantity === undefined || selectedVariant?.stock_quantity > 0) ? (
             <>
               <Button
                 size="lg"
                 className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm md:text-base py-5 md:py-6 font-semibold shadow-lg transition-all active:scale-95"
                 onClick={() => {
                   handleWhatsAppClick();
-                  const variant = selectedVariant || variants[0];
-                  const variantInfo = variant ? ` (${[variant.color, variant.storage, variant.ram].filter(Boolean).join(', ')})` : '';
-                  window.open(
-                    `https://wa.me/5566992473929?text=${encodeURIComponent(`Olá, tenho interesse no *${product.name}${variantInfo}*, ainda está disponível?`)}`,
-                    "_blank"
-                  );
+                  window.open(getWhatsAppLink(product), "_blank");
                 }}
               >
                 <MessageCircle className="mr-2 h-4 md:h-5 w-4 md:w-5" /> Negociar pelo WhatsApp

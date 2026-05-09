@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase, Product, Order, Customer } from "@/lib/supabase";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Loader2, TrendingUp, ShoppingCart, Users, Eye, Package, DollarSign, MessageCircle } from "lucide-react";
-import { getWhatsAppClickCount } from "@/lib/products";
+import { Loader2, TrendingUp, ShoppingCart, Users, Eye, Package, DollarSign, MessageCircle, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getWhatsAppClickCount, getWhatsAppClicksRankingByModel, getModelViewsAndWhatsAppClicks } from "@/lib/products";
 
 interface InsightsData {
   totalProducts: number;
@@ -15,6 +17,8 @@ interface InsightsData {
   totalRevenue: number;
   topProducts: Product[];
   topProductsByClicks: Array<{ product_id: string; product_name: string; total_clicks: number }>;
+  whatsappClicksByModel: Array<{ modelId: string; modelName: string; totalClicks: number }>;
+  modelViewsAndClicks: Array<{ modelId: string; modelName: string; views: number; whatsappClicks: number; conversionRate: number }>;
   conditionDistribution: Array<{ name: string; value: number }>;
   brandDistribution: Array<{ name: string; value: number }>;
   orderStatus: Array<{ status: string; count: number }>;
@@ -25,6 +29,7 @@ export function Insights() {
   const [data, setData] = useState<InsightsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [showConversionModal, setShowConversionModal] = useState(false);
 
   useEffect(() => {
     loadInsights();
@@ -144,6 +149,12 @@ export function Insights() {
       // Get WhatsApp clicks count
       const whatsappClicks = await getWhatsAppClickCount();
 
+      // Get WhatsApp clicks by model
+      const whatsappClicksByModel = await getWhatsAppClicksRankingByModel();
+
+      // Get model views and WhatsApp clicks with conversion rate
+      const modelViewsAndClicks = await getModelViewsAndWhatsAppClicks();
+
       setData({
         totalProducts,
         totalViews,
@@ -155,6 +166,8 @@ export function Insights() {
         totalRevenue,
         topProducts,
         topProductsByClicks,
+        whatsappClicksByModel,
+        modelViewsAndClicks,
         conditionDistribution,
         brandDistribution,
         orderStatus,
@@ -358,6 +371,79 @@ export function Insights() {
             )}
           </div>
         </div>
+
+        {/* Model Conversion Rate Analysis */}
+        {data.modelViewsAndClicks && data.modelViewsAndClicks.length > 0 && (
+          <>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Taxa de Conversão por Modelo</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowConversionModal(true)}
+                >
+                  Ver Detalhes
+                </Button>
+              </div>
+
+              {/* Bar Chart */}
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.modelViewsAndClicks}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="modelName"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    interval={0}
+                  />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value) => typeof value === 'number' ? value.toFixed(2) : value}
+                    contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', color: '#fff' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="views" name="Visualizações" fill="#3b82f6" />
+                  <Bar dataKey="whatsappClicks" name="Cliques WhatsApp" fill="#10b981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Conversion Rate Modal */}
+            <Dialog open={showConversionModal} onOpenChange={setShowConversionModal}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Taxa de Conversão por Modelo</DialogTitle>
+                </DialogHeader>
+                <div className="max-h-96 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted">
+                      <tr>
+                        <th className="text-left p-2 font-semibold">Posição</th>
+                        <th className="text-left p-2 font-semibold">Modelo</th>
+                        <th className="text-center p-2 font-semibold">Visualizações</th>
+                        <th className="text-center p-2 font-semibold">Cliques</th>
+                        <th className="text-center p-2 font-semibold">Taxa %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.modelViewsAndClicks.map((model, index) => (
+                        <tr key={model.modelId} className="border-b hover:bg-muted/50">
+                          <td className="p-2 font-semibold text-muted-foreground">#{index + 1}</td>
+                          <td className="p-2 font-medium">{model.modelName}</td>
+                          <td className="p-2 text-center">{model.views}</td>
+                          <td className="p-2 text-center font-semibold text-green-600">{model.whatsappClicks}</td>
+                          <td className="p-2 text-center font-bold text-lg">{model.conversionRate}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
 
         {/* Condition Distribution */}
         {data.conditionDistribution.length > 0 && (
