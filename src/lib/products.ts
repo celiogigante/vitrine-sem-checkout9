@@ -678,7 +678,7 @@ export async function incrementModelViews(modelId: string): Promise<void> {
 
 export async function recordWhatsAppClick(productId?: string, modelId?: string): Promise<void> {
   try {
-    await supabase
+    const { error } = await supabase
       .from("whatsapp_clicks")
       .insert([
         {
@@ -688,6 +688,10 @@ export async function recordWhatsAppClick(productId?: string, modelId?: string):
           referrer: document.referrer,
         },
       ]);
+
+    if (error) {
+      console.error("Error recording WhatsApp click:", error.message, error.details);
+    }
   } catch (err) {
     console.error("Error recording WhatsApp click:", err);
   }
