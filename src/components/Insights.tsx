@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useState, useEffect } from "react";
 import { supabase, Product, Order, Customer } from "@/lib/supabase";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
