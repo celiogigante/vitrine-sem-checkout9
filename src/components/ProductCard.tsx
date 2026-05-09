@@ -17,12 +17,8 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   useEffect(() => {
     const loadVariants = async () => {
-      try {
-        const variants = await getProductVariants(product.id);
-        setVariantCount(variants.length);
-      } catch (err) {
-        console.error("Error loading variants:", err);
-      }
+      const variants = await getProductVariants(product.id);
+      setVariantCount(variants.length);
     };
     loadVariants();
   }, [product.id]);

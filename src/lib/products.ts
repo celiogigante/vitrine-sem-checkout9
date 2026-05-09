@@ -400,13 +400,11 @@ export async function getProductVariants(productId: string): Promise<ProductVari
       .order("order_index", { ascending: true });
 
     if (error) {
-      console.error("Error fetching variants:", error);
       return [];
     }
 
     return data || [];
   } catch (err) {
-    console.error("Exception fetching variants:", err);
     return [];
   }
 }
