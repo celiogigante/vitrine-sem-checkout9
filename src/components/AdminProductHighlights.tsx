@@ -242,15 +242,18 @@ export default function AdminProductHighlights() {
             </div>
           </div>
         )}
+      </div>
 
+      {/* Fixed button */}
+      <div className="fixed bottom-6 right-6 z-40">
         <Button
           onClick={handleAddHighlight}
           disabled={selectedProductIds.size === 0}
-          className="w-full"
           size="lg"
+          className="shadow-lg"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Adicionar Selecionados ({selectedProductIds.size})
+          Adicionar ({selectedProductIds.size})
         </Button>
       </div>
 
