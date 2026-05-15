@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase, Product } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Search } from "lucide-react";
@@ -23,10 +23,27 @@ export default function AdminProductHighlights() {
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    if (showSuggestions) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSuggestions]);
 
   const loadData = async () => {
     try {
@@ -153,7 +170,7 @@ export default function AdminProductHighlights() {
           Pesquise um produto para adicionar ao carrossel de destaques do hero.
         </p>
         <div className="space-y-3">
-          <div className="relative">
+          <div className="relative" ref={dropdownRef}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
             <Input
               placeholder="Pesquisar por nome, marca ou modelo..."
@@ -230,6 +247,7 @@ export default function AdminProductHighlights() {
             onClick={handleAddHighlight}
             disabled={selectedProductIds.size === 0}
             className="w-full"
+            size="lg"
           >
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Selecionados ({selectedProductIds.size})
