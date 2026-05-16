@@ -21,7 +21,7 @@ const Products = () => {
   const [sort, setSort] = useState("recent");
   const [mobileColumns, setMobileColumns] = useState<1 | 2>(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     loadProducts();
@@ -154,7 +154,7 @@ const Products = () => {
           <p className="text-sm text-muted-foreground mb-4">
             {filtered.length} produto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} - Página {currentPage} de {totalPages}
           </p>
-          <div className={`grid ${mobileColumns === 1 ? "grid-cols-1" : "grid-cols-2"} md:grid-cols-3 lg:grid-cols-4 gap-4`}>
+          <div className={`grid ${mobileColumns === 1 ? "grid-cols-1" : "grid-cols-2"} md:grid-cols-4 gap-4`}>
             {paginatedList.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
 
