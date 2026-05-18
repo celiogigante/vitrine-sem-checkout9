@@ -9,9 +9,11 @@ import {
   Star,
   Award,
   Zap,
-  Loader2
+  Loader2,
+  SlidersHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ProductCard from "@/components/ProductCard";
 import HeroCarousel from "@/components/HeroCarousel";
 import { useEffect, useMemo, useState } from "react";
@@ -61,6 +63,7 @@ const transformProduct = (product: any): Product => {
 const Home = () => {
   const [s, setS] = useState(getSettings());
   const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("recent");
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [heroConfig, setHeroConfig] = useState<HeroConfig | null>(null);
@@ -192,9 +195,13 @@ const Home = () => {
 
       result = result.filter((p) => p.status !== "vendido");
 
+      if (sortBy === "price-asc") result.sort((a, b) => a.price - b.price);
+      else if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
+      else if (sortBy === "views") result.sort((a, b) => b.views - a.views);
+
       return result;
     },
-    [products, brandFilter]
+    [products, brandFilter, sortBy]
   );
 
   const vitrine = filtered;
@@ -254,28 +261,63 @@ const Home = () => {
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-white">Vitrine</h2>
 
-          {/* Mobile columns toggle - Only visible on mobile */}
-          <div className="md:hidden flex gap-0">
-            <button
-              onClick={() => setMobileColumns(2)}
-              className={`px-3 py-1 rounded-l-md text-sm font-medium transition-colors ${
-                mobileColumns === 2
-                  ? "bg-white text-black"
-                  : "bg-gray-700 text-white hover:bg-gray-600"
-              }`}
-            >
-              2 colunas
-            </button>
-            <button
-              onClick={() => setMobileColumns(1)}
-              className={`px-3 py-1 rounded-r-md text-sm font-medium transition-colors ${
-                mobileColumns === 1
-                  ? "bg-white text-black"
-                  : "bg-gray-700 text-white hover:bg-gray-600"
-              }`}
-            >
-              1 coluna
-            </button>
+          <div className="flex gap-3 items-center">
+            {/* Brand filter dropdown */}
+            <Select value={brandFilter} onValueChange={(v) => {
+              setBrandFilter(v);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-40 bg-gray-800 text-white border-gray-700">
+                <SelectValue placeholder="Marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas marcas</SelectItem>
+                {brands.map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Sort dropdown */}
+            <Select value={sortBy} onValueChange={(v) => {
+              setSortBy(v);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-44 bg-gray-800 text-white border-gray-700">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+                <SelectItem value="price-asc">Menor preço</SelectItem>
+                <SelectItem value="price-desc">Maior preço</SelectItem>
+                <SelectItem value="views">Mais vendidos</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Mobile columns toggle - Only visible on mobile */}
+            <div className="md:hidden flex gap-0">
+              <button
+                onClick={() => setMobileColumns(2)}
+                className={`px-3 py-1 rounded-l-md text-sm font-medium transition-colors ${
+                  mobileColumns === 2
+                    ? "bg-white text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                2 colunas
+              </button>
+              <button
+                onClick={() => setMobileColumns(1)}
+                className={`px-3 py-1 rounded-r-md text-sm font-medium transition-colors ${
+                  mobileColumns === 1
+                    ? "bg-white text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                1 coluna
+              </button>
+            </div>
           </div>
         </div>
 
