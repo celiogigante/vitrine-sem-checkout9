@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Loader2, User } from "lucide-react";
+import { Lock, Loader2, User, AlertCircle } from "lucide-react";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -14,6 +14,22 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [supabsaseError, setSupabaseError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      const missing = [];
+      if (!supabaseUrl) missing.push("VITE_SUPABASE_URL");
+      if (!supabaseAnonKey) missing.push("VITE_SUPABASE_ANON_KEY");
+
+      const errorMsg = `Variáveis de ambiente faltando: ${missing.join(", ")}`;
+      setSupabaseError(errorMsg);
+      console.error(errorMsg);
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +43,8 @@ export default function AdminLogin() {
     }
 
     setIsLoading(true);
+    setSupabaseError(null);
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -34,9 +52,12 @@ export default function AdminLogin() {
       });
 
       if (error) {
+        const errorMsg = error.message || "Erro desconhecido ao fazer login";
+        console.error("Supabase login error:", error);
+        setSupabaseError(errorMsg);
         toast({
           title: "Erro ao fazer login",
-          description: error.message,
+          description: errorMsg,
           variant: "destructive",
         });
         return;
@@ -54,12 +75,23 @@ export default function AdminLogin() {
         });
       }
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Erro inesperado ao fazer login";
       console.error("Login error:", err);
-      toast({
-        title: "Erro inesperado",
-        description: "Tente novamente mais tarde",
-        variant: "destructive",
-      });
+      setSupabaseError(errorMsg);
+
+      if (errorMsg.includes("Failed to fetch")) {
+        toast({
+          title: "Erro de conectividade",
+          description: "Não foi possível conectar ao servidor. Verifique sua conexão com a internet e as variáveis de ambiente do Supabase.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro inesperado",
+          description: errorMsg,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -149,6 +181,18 @@ export default function AdminLogin() {
             {isLogin ? "Faça login com suas credenciais" : "Criar uma nova conta"}
           </p>
         </div>
+
+        {supabsaseError && (
+          <div className="bg-destructive/10 border border-destructive/50 rounded-lg p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-destructive text-sm">Erro de Configuração</h3>
+                <p className="text-xs text-destructive/90 mt-1">{supabsaseError}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
           <div className="space-y-2">

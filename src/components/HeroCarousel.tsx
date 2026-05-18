@@ -51,7 +51,7 @@ export default function HeroCarousel() {
 
         const orderedProducts = highlightsList
           .map((h) => productsMap.get(h.product_id))
-          .filter((p) => p !== undefined) as Product[];
+          .filter((p) => p !== undefined && p.status !== "vendido") as Product[];
 
         setHighlights(highlightsList);
         setProducts(orderedProducts);

@@ -60,15 +60,13 @@ const Products = () => {
       const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase());
       const matchBrand = brand === "all" || p.brand === brand;
       const matchCondition = condition === "all" || p.condition === condition;
-      return matchSearch && matchBrand && matchCondition;
+      const notSold = p.status !== "vendido";
+      return matchSearch && matchBrand && matchCondition && notSold;
     });
 
     if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
     else if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
     else if (sort === "views") list.sort((a, b) => b.views - a.views);
-
-    // Vendidos sempre por último
-    list.sort((a, b) => (a.status === "vendido" ? 1 : 0) - (b.status === "vendido" ? 1 : 0));
 
     return list;
   }, [products, search, brand, condition, sort]);
@@ -151,9 +149,11 @@ const Products = () => {
         </div>
       ) : (
         <div>
-          <p className="text-sm text-muted-foreground mb-4">
-            {filtered.length} produto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} - Página {currentPage} de {totalPages}
-          </p>
+          <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+            <p className="text-sm text-gray-300 text-center">
+              {filtered.length} produto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""} • Página {currentPage} de {totalPages}
+            </p>
+          </div>
           <div className={`grid ${mobileColumns === 1 ? "grid-cols-1" : "grid-cols-2"} md:grid-cols-4 gap-4`}>
             {paginatedList.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
@@ -161,9 +161,12 @@ const Products = () => {
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-8">
               <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                onClick={() => {
+                  setCurrentPage(Math.max(1, currentPage - 1));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
                 disabled={currentPage === 1}
-                className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+                className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium"
               >
                 ← Anterior
               </button>
@@ -175,10 +178,10 @@ const Products = () => {
                       setCurrentPage(page);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className={`px-3 py-2 rounded-md transition-colors ${
+                    className={`px-3 py-2 rounded-md transition-colors font-medium ${
                       currentPage === page
-                        ? "bg-yellow-400 text-black font-medium"
-                        : "bg-gray-800 text-white hover:bg-gray-700"
+                        ? "bg-yellow-400 text-black"
+                        : "bg-gray-700 text-white hover:bg-gray-600"
                     }`}
                   >
                     {page}
@@ -191,7 +194,7 @@ const Products = () => {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
+                className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium"
               >
                 Próxima →
               </button>

@@ -16,7 +16,11 @@ export default function AdminModelManager() {
   const [editing, setEditing] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [modelsPage, setModelsPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(25);
+
+  // Filtros
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterBrand, setFilterBrand] = useState<string>("all");
 
   const [form, setForm] = useState({
     name: "",
@@ -116,13 +120,22 @@ export default function AdminModelManager() {
     setShowForm(false);
   };
 
-  const paginatedModels = models.slice((modelsPage - 1) * itemsPerPage, modelsPage * itemsPerPage);
+  const filtered = models.filter(m => {
+    const matchSearch = filterSearch === "" || m.name.toLowerCase().includes(filterSearch.toLowerCase()) || m.brand.toLowerCase().includes(filterSearch.toLowerCase());
+    const matchBrand = filterBrand === "all" || m.brand === filterBrand;
+    return matchSearch && matchBrand;
+  });
+
+  const paginatedModels = filtered.slice((modelsPage - 1) * itemsPerPage, modelsPage * itemsPerPage);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   const groupedByBrand = paginatedModels.reduce((acc, model) => {
     if (!acc[model.brand]) acc[model.brand] = [];
     acc[model.brand].push(model);
     return acc;
   }, {} as Record<string, Model[]>);
+
+  const allBrands = Array.from(new Set(models.map(m => m.brand))).sort();
 
   return (
     <div className="space-y-6">
@@ -134,6 +147,50 @@ export default function AdminModelManager() {
             Novo Modelo
           </Button>
         )}
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-sm">Filtros</h3>
+          {(filterSearch || filterBrand !== "all") && (
+            <button
+              onClick={() => {
+                setFilterSearch("");
+                setFilterBrand("all");
+                setModelsPage(1);
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Input
+            placeholder="Buscar nome..."
+            value={filterSearch}
+            onChange={(e) => {
+              setFilterSearch(e.target.value);
+              setModelsPage(1);
+            }}
+            className="text-sm"
+          />
+          <Select value={filterBrand} onValueChange={(v) => {
+            setFilterBrand(v);
+            setModelsPage(1);
+          }}>
+            <SelectTrigger className="text-sm">
+              <SelectValue placeholder="Marca" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas marcas</SelectItem>
+              {allBrands.map((b) => (
+                <SelectItem key={b} value={b}>{b}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {showForm && (
@@ -232,12 +289,12 @@ export default function AdminModelManager() {
           ))}
 
           {/* Pagination */}
-          {models.length > itemsPerPage && (
+          {filtered.length > itemsPerPage && (
             <div className="flex items-center justify-between px-4 py-3 border-t bg-secondary/30">
               <div className="text-sm text-muted-foreground">
                 Mostrando {(modelsPage - 1) * itemsPerPage + 1} a{" "}
-                {Math.min(modelsPage * itemsPerPage, models.length)} de{" "}
-                {models.length} modelos
+                {Math.min(modelsPage * itemsPerPage, filtered.length)} de{" "}
+                {filtered.length} modelos
               </div>
               <div className="flex gap-2">
                 <Button
@@ -250,7 +307,7 @@ export default function AdminModelManager() {
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({
-                    length: Math.ceil(models.length / itemsPerPage),
+                    length: totalPages,
                   }).map((_, i) => (
                     <Button
                       key={i + 1}
@@ -270,16 +327,10 @@ export default function AdminModelManager() {
                   size="sm"
                   onClick={() =>
                     setModelsPage(
-                      Math.min(
-                        Math.ceil(models.length / itemsPerPage),
-                        modelsPage + 1
-                      )
+                      Math.min(totalPages, modelsPage + 1)
                     )
                   }
-                  disabled={
-                    modelsPage ===
-                    Math.ceil(models.length / itemsPerPage)
-                  }
+                  disabled={modelsPage === totalPages}
                 >
                   Próximo →
                 </Button>

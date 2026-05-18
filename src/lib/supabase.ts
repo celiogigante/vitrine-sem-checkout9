@@ -4,12 +4,19 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Missing Supabase environment variables:");
-  console.error("- VITE_SUPABASE_URL:", supabaseUrl ? "configured" : "MISSING");
-  console.error("- VITE_SUPABASE_ANON_KEY:", supabaseAnonKey ? "configured" : "MISSING");
+  const errors = [];
+  if (!supabaseUrl) errors.push("VITE_SUPABASE_URL is missing");
+  if (!supabaseAnonKey) errors.push("VITE_SUPABASE_ANON_KEY is missing");
+
+  console.error("⚠️  Supabase Configuration Error:");
+  console.error(errors.join(", "));
+  console.error("Please configure these environment variables in your .env.local file");
+  console.error("See .env.example for the required format");
 }
 
-console.log("Initializing Supabase with URL:", supabaseUrl);
+if (supabaseUrl) {
+  console.log("✓ Supabase URL configured:", supabaseUrl);
+}
 
 export const supabase = createClient(
   supabaseUrl || "https://placeholder.supabase.co",

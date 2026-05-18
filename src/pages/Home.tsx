@@ -9,9 +9,11 @@ import {
   Star,
   Award,
   Zap,
-  Loader2
+  Loader2,
+  SlidersHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ProductCard from "@/components/ProductCard";
 import HeroCarousel from "@/components/HeroCarousel";
 import { useEffect, useMemo, useState } from "react";
@@ -61,6 +63,7 @@ const transformProduct = (product: any): Product => {
 const Home = () => {
   const [s, setS] = useState(getSettings());
   const [brandFilter, setBrandFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("recent");
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [heroConfig, setHeroConfig] = useState<HeroConfig | null>(null);
@@ -185,11 +188,20 @@ const Home = () => {
   };
 
   const filtered = useMemo(
-    () =>
-      brandFilter === "all"
+    () => {
+      let result = brandFilter === "all"
         ? products
-        : products.filter((p) => p.brand === brandFilter),
-    [products, brandFilter]
+        : products.filter((p) => p.brand === brandFilter);
+
+      result = result.filter((p) => p.status !== "vendido");
+
+      if (sortBy === "price-asc") result.sort((a, b) => a.price - b.price);
+      else if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
+      else if (sortBy === "views") result.sort((a, b) => b.views - a.views);
+
+      return result;
+    },
+    [products, brandFilter, sortBy]
   );
 
   const vitrine = filtered;
@@ -249,28 +261,63 @@ const Home = () => {
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-white">Vitrine</h2>
 
-          {/* Mobile columns toggle - Only visible on mobile */}
-          <div className="md:hidden flex gap-0">
-            <button
-              onClick={() => setMobileColumns(2)}
-              className={`px-3 py-1 rounded-l-md text-sm font-medium transition-colors ${
-                mobileColumns === 2
-                  ? "bg-white text-black"
-                  : "bg-gray-700 text-white hover:bg-gray-600"
-              }`}
-            >
-              2 colunas
-            </button>
-            <button
-              onClick={() => setMobileColumns(1)}
-              className={`px-3 py-1 rounded-r-md text-sm font-medium transition-colors ${
-                mobileColumns === 1
-                  ? "bg-white text-black"
-                  : "bg-gray-700 text-white hover:bg-gray-600"
-              }`}
-            >
-              1 coluna
-            </button>
+          <div className="flex gap-3 items-center">
+            {/* Brand filter dropdown */}
+            <Select value={brandFilter} onValueChange={(v) => {
+              setBrandFilter(v);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-40 bg-gray-800 text-white border-gray-700">
+                <SelectValue placeholder="Marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas marcas</SelectItem>
+                {brands.map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Sort dropdown */}
+            <Select value={sortBy} onValueChange={(v) => {
+              setSortBy(v);
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-44 bg-gray-800 text-white border-gray-700">
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+                <SelectItem value="price-asc">Menor preço</SelectItem>
+                <SelectItem value="price-desc">Maior preço</SelectItem>
+                <SelectItem value="views">Mais vendidos</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Mobile columns toggle - Only visible on mobile */}
+            <div className="md:hidden flex gap-0">
+              <button
+                onClick={() => setMobileColumns(2)}
+                className={`px-3 py-1 rounded-l-md text-sm font-medium transition-colors ${
+                  mobileColumns === 2
+                    ? "bg-white text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                2 colunas
+              </button>
+              <button
+                onClick={() => setMobileColumns(1)}
+                className={`px-3 py-1 rounded-r-md text-sm font-medium transition-colors ${
+                  mobileColumns === 1
+                    ? "bg-white text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                1 coluna
+              </button>
+            </div>
           </div>
         </div>
 
@@ -287,36 +334,43 @@ const Home = () => {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
-                >
-                  ← Anterior
-                </button>
-                <div className="flex gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-2 rounded-md transition-colors ${
-                        currentPage === page
-                          ? "bg-yellow-400 text-black font-medium"
-                          : "bg-gray-800 text-white hover:bg-gray-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+              <div className="mt-8">
+                <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-gray-300 text-center mb-3">
+                    Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, vitrine.length)} de {vitrine.length} produtos • Página {currentPage} de {totalPages}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
-                >
-                  Próxima →
-                </button>
+                <div className="flex justify-center items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium"
+                  >
+                    ← Anterior
+                  </button>
+                  <div className="flex gap-1 flex-wrap justify-center">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-md transition-colors font-medium ${
+                          currentPage === page
+                            ? "bg-yellow-400 text-black"
+                            : "bg-gray-700 text-white hover:bg-gray-600"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium"
+                  >
+                    Próxima →
+                  </button>
+                </div>
               </div>
             )}
           </>

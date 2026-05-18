@@ -23,7 +23,10 @@ export default function AdminBrandsManager() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [brandsPage, setBrandsPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(20);
+
+  // Filtro
+  const [filterSearch, setFilterSearch] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -177,8 +180,40 @@ export default function AdminBrandsManager() {
     );
   }
 
+  const filtered = brands.filter(b =>
+    filterSearch === "" || b.name.toLowerCase().includes(filterSearch.toLowerCase()) || b.slug.toLowerCase().includes(filterSearch.toLowerCase())
+  );
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
   return (
     <div className="space-y-6">
+      {/* Filter */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium text-sm">Filtro</h3>
+          {filterSearch && (
+            <button
+              onClick={() => {
+                setFilterSearch("");
+                setBrandsPage(1);
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+        <Input
+          placeholder="Buscar marca..."
+          value={filterSearch}
+          onChange={(e) => {
+            setFilterSearch(e.target.value);
+            setBrandsPage(1);
+          }}
+          className="text-sm"
+        />
+      </div>
+
       {showForm && (
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <h2 className="font-semibold text-lg">
@@ -269,7 +304,7 @@ export default function AdminBrandsManager() {
                   </td>
                 </tr>
               ) : (
-                brands.slice((brandsPage - 1) * itemsPerPage, brandsPage * itemsPerPage).map((brand) => (
+                filtered.slice((brandsPage - 1) * itemsPerPage, brandsPage * itemsPerPage).map((brand) => (
                   <tr
                     key={brand.id}
                     className="border-b last:border-0 hover:bg-secondary/50"
@@ -312,12 +347,12 @@ export default function AdminBrandsManager() {
         </div>
 
         {/* Pagination */}
-        {brands.length > itemsPerPage && (
+        {filtered.length > itemsPerPage && (
           <div className="flex items-center justify-between px-4 py-3 border-t bg-secondary/30">
             <div className="text-sm text-muted-foreground">
               Mostrando {(brandsPage - 1) * itemsPerPage + 1} a{" "}
-              {Math.min(brandsPage * itemsPerPage, brands.length)} de{" "}
-              {brands.length} marcas
+              {Math.min(brandsPage * itemsPerPage, filtered.length)} de{" "}
+              {filtered.length} marcas
             </div>
             <div className="flex gap-2">
               <Button
@@ -330,7 +365,7 @@ export default function AdminBrandsManager() {
               </Button>
               <div className="flex items-center gap-1">
                 {Array.from({
-                  length: Math.ceil(brands.length / itemsPerPage),
+                  length: totalPages,
                 }).map((_, i) => (
                   <Button
                     key={i + 1}
@@ -350,16 +385,10 @@ export default function AdminBrandsManager() {
                 size="sm"
                 onClick={() =>
                   setBrandsPage(
-                    Math.min(
-                      Math.ceil(brands.length / itemsPerPage),
-                      brandsPage + 1
-                    )
+                    Math.min(totalPages, brandsPage + 1)
                   )
                 }
-                disabled={
-                  brandsPage ===
-                  Math.ceil(brands.length / itemsPerPage)
-                }
+                disabled={brandsPage === totalPages}
               >
                 Próximo →
               </Button>
