@@ -50,7 +50,14 @@ export default function AdminDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"insights" | "produtos" | "menu" | "marcas" | "modelos" | "hero" | "destaques" | "formato" | "migracao">("insights");
   const [productsPage, setProductsPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(50);
+
+  // Filtros
+  const [filterSearch, setFilterSearch] = useState("");
+  const [filterBrand, setFilterBrand] = useState<string>("all");
+  const [filterModel, setFilterModel] = useState<string>("all");
+  const [filterCondition, setFilterCondition] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const [form, setForm] = useState({
     name: "",
@@ -457,6 +464,95 @@ export default function AdminDashboard() {
       {/* Products Tab */}
       {activeTab === "produtos" && (
         <>
+          {/* Filters */}
+          <div className="mb-6 rounded-lg border bg-card p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Filtros</h3>
+              {(filterSearch || filterBrand !== "all" || filterModel !== "all" || filterCondition !== "all" || filterStatus !== "all") && (
+                <button
+                  onClick={() => {
+                    setFilterSearch("");
+                    setFilterBrand("all");
+                    setFilterModel("all");
+                    setFilterCondition("all");
+                    setFilterStatus("all");
+                    setProductsPage(1);
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              <Input
+                placeholder="Buscar nome..."
+                value={filterSearch}
+                onChange={(e) => {
+                  setFilterSearch(e.target.value);
+                  setProductsPage(1);
+                }}
+                className="text-sm"
+              />
+              <Select value={filterBrand} onValueChange={(v) => {
+                setFilterBrand(v);
+                setProductsPage(1);
+              }}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas marcas</SelectItem>
+                  {brands.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterModel} onValueChange={(v) => {
+                setFilterModel(v);
+                setProductsPage(1);
+              }}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos modelos</SelectItem>
+                  {models.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterCondition} onValueChange={(v) => {
+                setFilterCondition(v);
+                setProductsPage(1);
+              }}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Condição" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  {CONDITIONS.map((c) => (
+                    <SelectItem key={c} value={c}>{conditionLabel(c)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={(v) => {
+                setFilterStatus(v);
+                setProductsPage(1);
+              }}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="disponivel">Disponível</SelectItem>
+                  <SelectItem value="vendido">Vendido</SelectItem>
+                  <SelectItem value="reservado">Reservado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {showForm && (
             <div className="mb-8 rounded-xl border bg-card p-6 space-y-6">
               <h2 className="font-semibold text-lg">
@@ -679,14 +775,27 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                        Nenhum produto cadastrado
-                      </td>
-                    </tr>
-                  ) : (
-                    products.slice((productsPage - 1) * itemsPerPage, productsPage * itemsPerPage).map((p) => (
+                  {(() => {
+                    const filtered = products.filter(p => {
+                      const matchSearch = filterSearch === "" || p.name.toLowerCase().includes(filterSearch.toLowerCase()) || p.brand.toLowerCase().includes(filterSearch.toLowerCase());
+                      const matchBrand = filterBrand === "all" || p.brand === filterBrand;
+                      const matchModel = filterModel === "all" || p.modelId === filterModel;
+                      const matchCondition = filterCondition === "all" || p.condition === filterCondition;
+                      const matchStatus = filterStatus === "all" || p.status === filterStatus;
+                      return matchSearch && matchBrand && matchModel && matchCondition && matchStatus;
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                            {products.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado com esses filtros"}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filtered.slice((productsPage - 1) * itemsPerPage, productsPage * itemsPerPage).map((p) => (
                       <tr
                         key={p.id}
                         className="border-b last:border-0 hover:bg-secondary/50"
@@ -746,67 +855,67 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
 
             {/* Pagination */}
-            {products.length > itemsPerPage && (
-              <div className="flex items-center justify-between px-4 py-3 border-t bg-secondary/30">
-                <div className="text-sm text-muted-foreground">
-                  Mostrando {(productsPage - 1) * itemsPerPage + 1} a{" "}
-                  {Math.min(productsPage * itemsPerPage, products.length)} de{" "}
-                  {products.length} produtos
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setProductsPage(Math.max(1, productsPage - 1))}
-                    disabled={productsPage === 1}
-                  >
-                    ← Anterior
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({
-                      length: Math.ceil(products.length / itemsPerPage),
-                    }).map((_, i) => (
-                      <Button
-                        key={i + 1}
-                        variant={
-                          productsPage === i + 1 ? "default" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setProductsPage(i + 1)}
-                        className="w-8 h-8 p-0"
-                      >
-                        {i + 1}
-                      </Button>
-                    ))}
+            {(() => {
+              const filtered = products.filter(p => {
+                const matchSearch = filterSearch === "" || p.name.toLowerCase().includes(filterSearch.toLowerCase()) || p.brand.toLowerCase().includes(filterSearch.toLowerCase());
+                const matchBrand = filterBrand === "all" || p.brand === filterBrand;
+                const matchModel = filterModel === "all" || p.modelId === filterModel;
+                const matchCondition = filterCondition === "all" || p.condition === filterCondition;
+                const matchStatus = filterStatus === "all" || p.status === filterStatus;
+                return matchSearch && matchBrand && matchModel && matchCondition && matchStatus;
+              });
+              const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+              return filtered.length > itemsPerPage ? (
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-secondary/30">
+                  <div className="text-sm text-muted-foreground">
+                    Mostrando {filtered.length === 0 ? 0 : (productsPage - 1) * itemsPerPage + 1} a{" "}
+                    {Math.min(productsPage * itemsPerPage, filtered.length)} de{" "}
+                    {filtered.length} produtos
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setProductsPage(
-                        Math.min(
-                          Math.ceil(products.length / itemsPerPage),
-                          productsPage + 1
-                        )
-                      )
-                    }
-                    disabled={
-                      productsPage ===
-                      Math.ceil(products.length / itemsPerPage)
-                    }
-                  >
-                    Próximo →
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProductsPage(Math.max(1, productsPage - 1))}
+                      disabled={productsPage === 1}
+                    >
+                      ← Anterior
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <Button
+                          key={i + 1}
+                          variant={
+                            productsPage === i + 1 ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setProductsPage(i + 1)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProductsPage(Math.min(totalPages, productsPage + 1))}
+                      disabled={productsPage === totalPages}
+                    >
+                      Próximo →
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : null;
+            })()}
           </div>
         </>
       )}

@@ -185,10 +185,15 @@ const Home = () => {
   };
 
   const filtered = useMemo(
-    () =>
-      brandFilter === "all"
+    () => {
+      let result = brandFilter === "all"
         ? products
-        : products.filter((p) => p.brand === brandFilter),
+        : products.filter((p) => p.brand === brandFilter);
+
+      result = result.filter((p) => p.status !== "vendido");
+
+      return result;
+    },
     [products, brandFilter]
   );
 
@@ -287,36 +292,43 @@ const Home = () => {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
-                >
-                  ← Anterior
-                </button>
-                <div className="flex gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-2 rounded-md transition-colors ${
-                        currentPage === page
-                          ? "bg-yellow-400 text-black font-medium"
-                          : "bg-gray-800 text-white hover:bg-gray-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+              <div className="mt-8">
+                <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-gray-300 text-center mb-3">
+                    Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, vitrine.length)} de {vitrine.length} produtos • Página {currentPage} de {totalPages}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-md bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700"
-                >
-                  Próxima →
-                </button>
+                <div className="flex justify-center items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium"
+                  >
+                    ← Anterior
+                  </button>
+                  <div className="flex gap-1 flex-wrap justify-center">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 rounded-md transition-colors font-medium ${
+                          currentPage === page
+                            ? "bg-yellow-400 text-black"
+                            : "bg-gray-700 text-white hover:bg-gray-600"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-md bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium"
+                  >
+                    Próxima →
+                  </button>
+                </div>
               </div>
             )}
           </>
